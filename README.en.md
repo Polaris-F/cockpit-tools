@@ -120,7 +120,7 @@ npm run tauri build
 
 ## Sponsor
 
-If you find this project useful, consider supporting it here: [☕ Donate](docs/DONATE.md)
+If you find this project useful, consider supporting it here: [☕ Donate](docs/DONATE.en.md)
 
 Every bit of support helps sustain open-source development. Thank you!
 
