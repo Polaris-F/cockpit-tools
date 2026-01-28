@@ -152,6 +152,8 @@ fn get_antigravity_pids() -> Vec<u32> {
 
 /// 关闭 Antigravity 进程
 pub fn close_antigravity(timeout_secs: u64) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    let _ = timeout_secs; // Silence unused warning on Windows
     crate::modules::logger::log_info("正在关闭 Antigravity...");
 
     let pids = get_antigravity_pids();
@@ -243,6 +245,8 @@ pub fn start_antigravity() -> Result<(), String> {
             }
             return Err(format!("启动 Antigravity 失败: {}", stderr));
         }
+        crate::modules::logger::log_info("Antigravity 启动命令已发送");
+        return Ok(());
     }
 
     #[cfg(target_os = "windows")]
@@ -295,9 +299,9 @@ pub fn start_antigravity() -> Result<(), String> {
 
         return Err("未找到 Antigravity 可执行文件".to_string());
     }
-
-    crate::modules::logger::log_info("Antigravity 启动命令已发送");
-    Ok(())
+    
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    Err("不支持的操作系统".to_string())
 }
 
 pub fn find_pids_by_port(port: u16) -> Result<Vec<u32>, String> {
