@@ -7,6 +7,24 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [0.4.3] - 2026-01-29
+
+### Added
+- **Codex Tag Management**: Added global tag deletion for Codex accounts.
+- **Account Filtering & Tagging**:
+  - Support for managing account tags (add/remove).
+  - Support for filtering accounts by tags.
+- **Compact View**:
+  - Added compact view mode for account list.
+  - Added status icons for disabled or warning states in compact view.
+  - Support customizable model grouping in compact view.
+
+### Changed
+- **Smart Recommendations**: Improved dashboard recommendation logic to exclude disabled, forbidden, or empty accounts.
+- **UI Improvements**:
+  - Refined compact view interactions.
+  - Removed redundant tag rendering in list views.
+  
 ## [0.4.2] - 2026-01-29
 
 ### Added

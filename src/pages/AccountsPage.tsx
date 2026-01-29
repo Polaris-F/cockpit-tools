@@ -1482,6 +1482,22 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
           const quotas = getAccountQuotas(account)
           const overallQuota = calculateOverallQuota(quotas)
           const isSelected = selected.has(account.id)
+          const isDisabled = account.disabled
+          const warning = refreshWarnings[account.email]
+          const warningLabel =
+            warning?.kind === 'auth'
+              ? t('accounts.status.authInvalid')
+              : t('accounts.status.refreshFailed')
+          const warningTitle = warning?.message || ''
+          const disabledTitle = isDisabled
+            ? `${t('accounts.status.disabled')}${account.disabled_reason ? `: ${account.disabled_reason}` : ''}`
+            : ''
+          const statusTitle =
+            warning && isDisabled
+              ? `${disabledTitle} / ${warningTitle || warningLabel}`
+              : warning
+                ? warningTitle || warningLabel
+                : disabledTitle
 
           // 获取可见分组的配额（按排序后的顺序，排除隐藏的和无配额数据的）
           const groupQuotas = visibleGroups
@@ -1533,7 +1549,12 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
             <span
               className={`${styles.email} ${tier === 'PRO' || tier === 'ULTRA' ? styles.emailGradient : ''}`}
             >
-              {account.email}
+              {(warning || isDisabled) && (
+                <span className={styles.statusIcon} title={statusTitle}>
+                  !
+                </span>
+              )}
+              <span className={styles.emailText}>{account.email}</span>
             </span>
             <div className={styles.quotas}>
               {groupQuotas.length > 0 ? (

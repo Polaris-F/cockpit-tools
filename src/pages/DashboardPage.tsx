@@ -139,7 +139,13 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     if (agAccounts.length <= 1) return null;
     
     // Simple logic: find account with highest overall quota that isn't current
-    const others = agAccounts.filter(a => a.id !== agCurrentId);
+    const others = agAccounts.filter((a) => {
+      if (a.id === agCurrentId) return false;
+      if (a.disabled) return false;
+      if (a.quota?.is_forbidden) return false;
+      if (!a.quota?.models || a.quota.models.length === 0) return false;
+      return true;
+    });
     if (others.length === 0) return null;
 
     return others.reduce((prev, curr) => {
@@ -159,7 +165,11 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
   const codexRecommended = useMemo(() => {
     if (codexAccounts.length <= 1) return null;
 
-    const others = codexAccounts.filter(a => a.id !== codexCurrentId);
+    const others = codexAccounts.filter((a) => {
+      if (a.id === codexCurrentId) return false;
+      if (!a.quota) return false;
+      return true;
+    });
     if (others.length === 0) return null;
 
     return others.reduce((prev, curr) => {
