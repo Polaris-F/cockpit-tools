@@ -638,14 +638,24 @@ function updateFile(fileName) {
         const key = keys[i];
         if (!isSafeKey(key)) return false;
         if (!Object.prototype.hasOwnProperty.call(current, key) || !current[key]) {
-          current[key] = Object.create(null);
+          Object.defineProperty(current, key, {
+            value: Object.create(null),
+            writable: true,
+            enumerable: true,
+            configurable: true
+          });
         }
         current = current[key];
       }
       const lastKey = keys[keys.length - 1];
       if (!isSafeKey(lastKey)) return false;
       if (!Object.prototype.hasOwnProperty.call(current, lastKey)) {
-        current[lastKey] = value;
+        Object.defineProperty(current, lastKey, {
+          value: value,
+          writable: true,
+          enumerable: true,
+          configurable: true
+        });
         return true;
       }
       return false;
