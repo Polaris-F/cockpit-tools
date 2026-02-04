@@ -7,7 +7,6 @@ import {
   Trash2,
   Terminal,
   FolderOpen,
-  RefreshCw,
   Square,
   ChevronDown,
   X,
@@ -400,14 +399,8 @@ export function InstancesManager<TAccount extends AccountLike>({
     setActionLoading(target.id);
     try {
       if (restartStrategy === 'safe') {
-        setRestartingAll(true);
-        await refreshInstances();
-        const runningIds = instances.filter((item) => item.running).map((item) => item.id);
-        await closeAllInstances();
-        const toRestart = runningIds.length > 0 ? runningIds : [target.id];
-        for (const id of toRestart) {
-          await startInstance(id);
-        }
+        await stopInstance(target.id);
+        await startInstance(target.id);
       } else {
         await forceStopInstance(target.id);
         await startInstance(target.id);
@@ -454,35 +447,6 @@ export function InstancesManager<TAccount extends AccountLike>({
     } catch (e) {
       setMessage({ text: String(e), tone: 'error' });
     } finally {
-      setBulkActionLoading(false);
-    }
-  };
-
-  const handleRestartAll = async () => {
-    const confirmed = await confirmDialog(t('instances.bulkConfirm.restartAll'), {
-      title: t('common.confirm'),
-      okLabel: t('common.confirm'),
-      cancelLabel: t('common.cancel'),
-    });
-    if (!confirmed) return;
-    setBulkActionLoading(true);
-    setRestartingAll(true);
-    try {
-      await refreshInstances();
-      const runningIds = instances.filter((item) => item.running).map((item) => item.id);
-      if (runningIds.length === 0) {
-        setMessage({ text: t('instances.messages.noneRunning', '当前没有运行中的实例') });
-        return;
-      }
-      await closeAllInstances();
-      for (const id of runningIds) {
-        await startInstance(id);
-      }
-      setMessage({ text: t('instances.messages.restartedAll', '已重启运行中的实例') });
-    } catch (e) {
-      setMessage({ text: String(e), tone: 'error' });
-    } finally {
-      setRestartingAll(false);
       setBulkActionLoading(false);
     }
   };
@@ -824,14 +788,6 @@ export function InstancesManager<TAccount extends AccountLike>({
             title={t('instances.actions.startAll', '全部启动')}
           >
             <Play size={16} />
-          </button>
-          <button
-            className="btn btn-secondary"
-            onClick={handleRestartAll}
-            disabled={bulkActionLoading || restartingAll}
-            title={t('instances.actions.restartAll', '全部重启')}
-          >
-            <RefreshCw size={16} />
           </button>
           <button
             className="btn btn-secondary"

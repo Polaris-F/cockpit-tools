@@ -9,6 +9,8 @@ use crate::modules::config;
 const OPENCODE_APP_NAME: &str = "OpenCode";
 #[cfg(target_os = "macos")]
 const CODEX_APP_PATH: &str = "/Applications/Codex.app/Contents/MacOS/Codex";
+#[cfg(target_os = "macos")]
+const ANTIGRAVITY_APP_PATH: &str = "/Applications/Antigravity.app/Contents/MacOS/Electron";
 
 fn normalize_custom_path(value: Option<&str>) -> Option<String> {
     let trimmed = value.unwrap_or("").trim();
@@ -87,17 +89,33 @@ pub fn is_antigravity_running() -> bool {
 }
 
 fn extract_user_data_dir(args: &[std::ffi::OsString]) -> Option<String> {
-    let mut iter = args.iter().peekable();
-    while let Some(arg) = iter.next() {
-        let value = arg.to_string_lossy().to_string();
-        if value.starts_with("--user-data-dir=") {
-            return Some(value.trim_start_matches("--user-data-dir=").to_string());
+    let tokens: Vec<String> = args.iter().map(|arg| arg.to_string_lossy().to_string()).collect();
+    let mut index = 0;
+    while index < tokens.len() {
+        let value = tokens[index].as_str();
+        if let Some(rest) = value.strip_prefix("--user-data-dir=") {
+            return Some(rest.to_string());
         }
         if value == "--user-data-dir" {
-            if let Some(next) = iter.next() {
-                return Some(next.to_string_lossy().to_string());
+            index += 1;
+            if index >= tokens.len() {
+                return None;
             }
+            let mut parts = Vec::new();
+            while index < tokens.len() {
+                let part = tokens[index].as_str();
+                if part.starts_with("--") {
+                    break;
+                }
+                parts.push(part);
+                index += 1;
+            }
+            if !parts.is_empty() {
+                return Some(parts.join(" "));
+            }
+            return None;
         }
+        index += 1;
     }
     None
 }
@@ -126,13 +144,35 @@ fn parse_user_data_dir_value(raw: &str) -> Option<String> {
 }
 
 fn extract_user_data_dir_from_command_line(command_line: &str) -> Option<String> {
-    if let Some(pos) = command_line.find("--user-data-dir=") {
-        let rest = &command_line[pos + "--user-data-dir=".len()..];
-        return parse_user_data_dir_value(rest);
-    }
-    if let Some(pos) = command_line.find("--user-data-dir") {
-        let rest = &command_line[pos + "--user-data-dir".len()..];
-        return parse_user_data_dir_value(rest);
+    let tokens = split_command_tokens(command_line);
+    let mut index = 0;
+    while index < tokens.len() {
+        let token = tokens[index].as_str();
+        if let Some(rest) = token.strip_prefix("--user-data-dir=") {
+            if !rest.trim().is_empty() {
+                return Some(rest.to_string());
+            }
+        }
+        if token == "--user-data-dir" {
+            index += 1;
+            if index >= tokens.len() {
+                return None;
+            }
+            let mut parts = Vec::new();
+            while index < tokens.len() {
+                let part = tokens[index].as_str();
+                if part.starts_with("--") || is_env_token(part) {
+                    break;
+                }
+                parts.push(part);
+                index += 1;
+            }
+            if !parts.is_empty() {
+                return Some(parts.join(" "));
+            }
+            return None;
+        }
+        index += 1;
     }
     None
 }
@@ -158,6 +198,43 @@ fn parse_env_value(raw: &str) -> Option<String> {
     } else {
         Some(value.to_string())
     }
+}
+
+fn extract_env_value_from_tokens(tokens: &[String], key: &str) -> Option<String> {
+    if tokens.is_empty() {
+        return None;
+    }
+    let prefix = format!("{}=", key);
+    let mut index = 0;
+    while index < tokens.len() {
+        let token = tokens[index].as_str();
+        if let Some(rest) = token.strip_prefix(&prefix) {
+            let mut parts: Vec<&str> = Vec::new();
+            if !rest.is_empty() {
+                parts.push(rest);
+            }
+            let mut next = index + 1;
+            while next < tokens.len() {
+                let value = tokens[next].as_str();
+                if value.starts_with("--") || is_env_token(value) {
+                    break;
+                }
+                parts.push(value);
+                next += 1;
+            }
+            if parts.is_empty() {
+                return None;
+            }
+            let joined = parts.join(" ");
+            let trimmed = joined.trim();
+            if trimmed.is_empty() {
+                return None;
+            }
+            return Some(trimmed.to_string());
+        }
+        index += 1;
+    }
+    None
 }
 
 fn split_command_tokens(command_line: &str) -> Vec<String> {
@@ -272,6 +349,61 @@ fn list_user_data_dirs_from_ps() -> Vec<String> {
             }
         }
     }
+    result
+}
+
+#[cfg(target_os = "macos")]
+fn collect_antigravity_process_entries_macos() -> Vec<(u32, Option<String>)> {
+    let mut pids = Vec::new();
+    if let Ok(output) = Command::new("pgrep")
+        .args(["-f", ANTIGRAVITY_APP_PATH])
+        .output()
+    {
+        if output.status.success() {
+            for line in String::from_utf8_lossy(&output.stdout).lines() {
+                if let Ok(pid) = line.trim().parse::<u32>() {
+                    pids.push(pid);
+                }
+            }
+        }
+    }
+
+    if pids.is_empty() {
+        return Vec::new();
+    }
+
+    pids.sort();
+    pids.dedup();
+
+    let mut result = Vec::new();
+    for pid in pids {
+        let output = Command::new("ps")
+            .args(["-Eww", "-p", &pid.to_string(), "-o", "command="])
+            .output();
+        let output = match output {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        if !output.status.success() {
+            continue;
+        }
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        for line in stdout.lines() {
+            let cmdline = line.trim();
+            if cmdline.is_empty() {
+                continue;
+            }
+            if !cmdline
+                .to_lowercase()
+                .contains("antigravity.app/contents/macos/electron")
+            {
+                continue;
+            }
+            let dir = extract_user_data_dir_from_command_line(cmdline);
+            result.push((pid, dir));
+        }
+    }
+
     result
 }
 
@@ -398,32 +530,44 @@ fn collect_antigravity_pids_by_user_data_dir(user_data_dir: &str) -> Vec<u32> {
 
     #[cfg(target_os = "macos")]
     {
-        let output = Command::new("ps").args(["-axo", "pid,command"]).output();
-        if let Ok(output) = output {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            for line in stdout.lines().skip(1) {
-                let line = line.trim();
-                if line.is_empty() {
-                    continue;
-                }
-                let mut parts = line.splitn(2, |ch: char| ch.is_whitespace());
-                let pid_str = parts.next().unwrap_or("").trim();
-                let cmdline = parts.next().unwrap_or("").trim();
-                let pid = match pid_str.parse::<u32>() {
-                    Ok(value) => value,
-                    Err(_) => continue,
-                };
-                let lower = cmdline.to_lowercase();
-                if !lower.contains("antigravity.app/contents/")
-                    || lower.contains("antigravity tools.app/contents/")
-                    || lower.contains("crashpad_handler")
-                {
-                    continue;
-                }
-                if let Some(dir) = extract_user_data_dir_from_command_line(cmdline) {
+        let entries = collect_antigravity_process_entries_macos();
+        if !entries.is_empty() {
+            for (pid, dir) in entries {
+                if let Some(dir) = dir {
                     let normalized = normalize_path_for_compare(&dir);
                     if normalized == target {
                         result.push(pid);
+                    }
+                }
+            }
+        } else {
+            let output = Command::new("ps").args(["-axo", "pid,command"]).output();
+            if let Ok(output) = output {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                for line in stdout.lines().skip(1) {
+                    let line = line.trim();
+                    if line.is_empty() {
+                        continue;
+                    }
+                    let mut parts = line.splitn(2, |ch: char| ch.is_whitespace());
+                    let pid_str = parts.next().unwrap_or("").trim();
+                    let cmdline = parts.next().unwrap_or("").trim();
+                    let pid = match pid_str.parse::<u32>() {
+                        Ok(value) => value,
+                        Err(_) => continue,
+                    };
+                    let lower = cmdline.to_lowercase();
+                    if !lower.contains("antigravity.app/contents/")
+                        || lower.contains("antigravity tools.app/contents/")
+                        || lower.contains("crashpad_handler")
+                    {
+                        continue;
+                    }
+                    if let Some(dir) = extract_user_data_dir_from_command_line(cmdline) {
+                        let normalized = normalize_path_for_compare(&dir);
+                        if normalized == target {
+                            result.push(pid);
+                        }
                     }
                 }
             }
@@ -591,11 +735,23 @@ pub fn list_antigravity_user_data_dirs() -> Vec<String> {
 
     #[cfg(target_os = "macos")]
     {
-        let mut ps_dirs = list_user_data_dirs_from_ps();
-        if !ps_dirs.is_empty() {
-            result.append(&mut ps_dirs);
+        let mut pid_dirs: Vec<String> = collect_antigravity_process_entries_macos()
+            .into_iter()
+            .filter_map(|(_, dir)| dir)
+            .map(|dir| normalize_path_for_compare(&dir))
+            .filter(|dir| !dir.is_empty())
+            .collect();
+        if !pid_dirs.is_empty() {
+            result.append(&mut pid_dirs);
             result.sort();
             result.dedup();
+        } else {
+            let mut ps_dirs = list_user_data_dirs_from_ps();
+            if !ps_dirs.is_empty() {
+                result.append(&mut ps_dirs);
+                result.sort();
+                result.dedup();
+            }
         }
     }
 
@@ -1107,10 +1263,13 @@ fn collect_codex_process_entries() -> Vec<(u32, Option<String>)> {
         if is_helper {
             continue;
         }
-        let mut codex_home = env_tokens
-            .iter()
-            .find_map(|token| token.strip_prefix("CODEX_HOME="))
-            .map(|value| value.to_string());
+        let mut codex_home = extract_env_value_from_tokens(&env_tokens, "CODEX_HOME");
+        if codex_home.is_none() {
+            codex_home = env_tokens
+                .iter()
+                .find_map(|token| token.strip_prefix("CODEX_HOME="))
+                .map(|value| value.to_string());
+        }
         if codex_home.is_none() {
             codex_home = extract_env_value(&cmdline, "CODEX_HOME");
         }
