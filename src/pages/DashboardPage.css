@@ -16,7 +16,7 @@
 /* Stats Row */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 
@@ -50,6 +50,7 @@
 .stat-icon-bg.primary { background: rgba(59, 130, 246, 0.1); color: var(--primary); }
 .stat-icon-bg.success { background: rgba(34, 197, 94, 0.1); color: var(--success); }
 .stat-icon-bg.info { background: rgba(14, 165, 198, 0.1); color: #0ea5c6; }
+.stat-icon-bg.warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 
 .stat-info {
   display: flex;
@@ -62,18 +63,24 @@
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-label {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Cards Split Row */
 .cards-split-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 20px;
   /* Auto height based on content, or min-height */
   min-height: 400px; 
@@ -116,6 +123,9 @@
   font-size: 16px;
   font-weight: 600;
   letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-action-btn {

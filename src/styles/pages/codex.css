@@ -33,6 +33,16 @@
   min-height: 260px;
 }
 
+.copilot-accounts-page .codex-account-card {
+  min-height: 200px;
+  padding: 16px;
+  gap: 12px;
+}
+
+.copilot-accounts-page .codex-accounts-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
 .codex-account-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
@@ -95,6 +105,14 @@
   border-radius: var(--radius-full);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.copilot-table .plan-badge {
+  display: inline-block;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .codex-account-card .tier-badge.free,
@@ -644,11 +662,49 @@
   min-height: 52px;
 }
 
+.copilot-accounts-page .account-table .quota-item {
+  min-height: 44px;
+}
+
+.copilot-accounts-page .account-table .quota-bar-track {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.copilot-accounts-page .account-table .quota-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.copilot-accounts-page .account-table .quota-bar.high {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.copilot-accounts-page .account-table .quota-bar.medium {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.copilot-accounts-page .account-table .quota-bar.low {
+  background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.copilot-accounts-page .account-table .quota-bar.critical {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
 .codex-accounts-page .account-table .quota-reset {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 140px;
+}
+
+.copilot-table td {
+  vertical-align: middle;
 }
 
 .codex-accounts-page .filter-select {
