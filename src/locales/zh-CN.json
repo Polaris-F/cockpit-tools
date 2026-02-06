@@ -20,7 +20,8 @@
     "none": "暂无",
     "detail": "详情",
     "editable": "可编辑",
-    "preview": "预览"
+    "preview": "预览",
+    "adding": "添加中..."
   },
   "nav": {
     "dashboard": "仪表盘",
@@ -30,7 +31,64 @@
     "fingerprints": "设备指纹",
     "settings": "设置",
     "codex": "Codex 账号",
+    "copilot": "Copilot 账号",
     "instances": "多开实例"
+  },
+  "copilot": {
+    "title": "Copilot 账号",
+    "subtitle": "管理 GitHub Copilot 账号并查看本月 Premium Requests 用量",
+    "tokenPlaceholder": "输入 GitHub PAT（建议仅用于读账单/usage）",
+    "monthlyLimitPlaceholder": "月度包含额度（可选，例如 300）",
+    "planPlaceholder": "套餐名称（可选，例如 Pro / Pro+）",
+    "addAccount": "添加 Copilot 账号",
+    "loginHint": "登录方式：设备码授权或 PAT",
+    "current": "当前",
+    "search": "搜索用户名或邮箱",
+    "currentMonth": "当前月份",
+    "resetDate": "重置日期",
+    "usage": "用量",
+    "used": "已用",
+    "remaining": "剩余",
+    "usageItems": "usageItems 数量",
+    "empty": "还没有 Copilot 账号，先添加一个 PAT。",
+    "deviceTab": "设备码授权",
+    "tokenTab": "PAT",
+    "deviceStart": "获取授权码",
+    "addModalTitle": "添加 Copilot 账号",
+    "deviceDesc": "获取授权码后，在浏览器中输入 code 完成授权。",
+    "tokenDesc": "使用 PAT 添加账号（建议仅用于读账单/usage）。",
+    "deviceCode": "授权码",
+    "copyCode": "复制授权码",
+    "openVerify": "打开授权页面",
+    "deviceSuccess": "授权成功，已添加账号",
+    "deviceFailed": "授权失败",
+    "deviceExpired": "授权码已过期，请重新获取",
+    "clientIdPlaceholder": "Client ID（默认内置，可留空）"
+    ,
+    "errors": {
+      "integration": "该 token 无法访问用量接口，请使用 Fine-grained PAT（Plan: Read）"
+    },
+    "view": {
+      "list": "列表视图",
+      "grid": "卡片视图"
+    },
+    "sortLabel": "排序",
+    "sort": {
+      "lastUsed": "最近使用",
+      "usedAsc": "已用升序",
+      "usedDesc": "已用降序",
+      "remaining": "剩余最多"
+    },
+    "filterTags": "标签筛选",
+    "noAvailableTags": "暂无可用标签",
+    "clearFilter": "清空筛选",
+    "editTags": "编辑标签",
+    "columns": {
+      "username": "账号",
+      "plan": "订阅",
+      "usage": "已用",
+      "actions": "操作"
+    }
   },
   "instances": {
     "title": "多开实例",
@@ -939,6 +997,7 @@
     "panels": {
       "antigravity": "Antigravity",
       "codex": "Codex",
+      "copilot": "Copilot",
       "planDistribution": "订阅分布",
       "current": "当前账号",
       "recommended": "推荐账号",

@@ -1,4 +1,4 @@
-import { Settings, Rocket, GaugeCircle } from 'lucide-react';
+import { Settings, Rocket, GaugeCircle, Github } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useState, useRef, useCallback } from 'react';
 import { Page } from '../../types/navigation';
@@ -117,6 +117,15 @@ export function SideNav({ page, setPage }: SideNavProps) {
         >
           <CodexIcon />
           <span className="tooltip">{t('nav.codex')}</span>
+        </button>
+
+        <button
+          className={`nav-item ${page === 'copilot' ? 'active' : ''}`}
+          onClick={() => setPage('copilot')}
+          title={t('nav.copilot', 'Copilot')}
+        >
+          <Github size={20} />
+          <span className="tooltip">{t('nav.copilot', 'Copilot')}</span>
         </button>
 
         <button 

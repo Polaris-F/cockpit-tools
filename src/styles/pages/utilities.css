@@ -1113,6 +1113,12 @@
   background: var(--bg-secondary);
 }
 
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .account-table tr:hover .table-action-cell {
   background: var(--bg-tertiary);
 }

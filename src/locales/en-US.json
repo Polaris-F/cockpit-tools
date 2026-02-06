@@ -20,7 +20,8 @@
     "none": "None",
     "detail": "Details",
     "editable": "Editable",
-    "preview": "Preview"
+    "preview": "Preview",
+    "adding": "Adding..."
   },
   "nav": {
     "overview": "Antigravity Account",
@@ -29,8 +30,65 @@
     "fingerprints": "Fingerprints",
     "settings": "Settings",
     "codex": "Codex Accounts",
+    "copilot": "Copilot Accounts",
     "dashboard": "Dashboard",
     "instances": "Multi-Instance"
+  },
+  "copilot": {
+    "title": "Copilot Accounts",
+    "subtitle": "Manage GitHub Copilot accounts and track monthly Premium Requests usage",
+    "tokenPlaceholder": "Enter GitHub PAT (read-only billing/usage recommended)",
+    "monthlyLimitPlaceholder": "Monthly included requests (optional, e.g. 300)",
+    "planPlaceholder": "Plan label (optional, e.g. Pro / Pro+)",
+    "addAccount": "Add Copilot Account",
+    "loginHint": "Login method: device code or PAT",
+    "current": "Current",
+    "search": "Search username or email",
+    "currentMonth": "Current Month",
+    "resetDate": "Reset Date",
+    "usage": "Usage",
+    "used": "Used",
+    "remaining": "Remaining",
+    "usageItems": "usageItems count",
+    "empty": "No Copilot accounts yet. Add a PAT first.",
+    "deviceTab": "Device Code",
+    "tokenTab": "PAT",
+    "deviceStart": "Get Code",
+    "addModalTitle": "Add Copilot Account",
+    "deviceDesc": "Get a device code, then enter it in the browser to authorize.",
+    "tokenDesc": "Add account using a PAT (read-only billing/usage recommended).",
+    "deviceCode": "User code",
+    "copyCode": "Copy code",
+    "openVerify": "Open verification page",
+    "deviceSuccess": "Authorized, account added",
+    "deviceFailed": "Authorization failed",
+    "deviceExpired": "Device code expired, please try again",
+    "clientIdPlaceholder": "Client ID (built-in by default, optional)"
+    ,
+    "errors": {
+      "integration": "This token cannot access usage. Use a Fine-grained PAT (Plan: Read)."
+    },
+    "view": {
+      "list": "List view",
+      "grid": "Card view"
+    },
+    "sortLabel": "Sort",
+    "sort": {
+      "lastUsed": "Last used",
+      "usedAsc": "Used asc",
+      "usedDesc": "Used desc",
+      "remaining": "Most remaining"
+    },
+    "filterTags": "Filter tags",
+    "noAvailableTags": "No tags available",
+    "clearFilter": "Clear filter",
+    "editTags": "Edit tags",
+    "columns": {
+      "username": "Account",
+      "plan": "Plan",
+      "usage": "Used",
+      "actions": "Actions"
+    }
   },
   "instances": {
     "title": "Multi-Instance",
@@ -930,6 +988,7 @@
     "panels": {
       "antigravity": "Antigravity",
       "codex": "Codex",
+      "copilot": "Copilot",
       "planDistribution": "Plan distribution",
       "current": "Current account",
       "recommended": "Recommended account",

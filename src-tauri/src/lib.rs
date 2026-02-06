@@ -213,6 +213,20 @@ pub fn run() {
             commands::codex::close_codex_oauth_port,
             commands::codex::update_codex_account_tags,
 
+            // Copilot Commands
+            commands::copilot::list_copilot_accounts,
+            commands::copilot::get_current_copilot_account,
+            commands::copilot::add_copilot_account,
+            commands::copilot::prepare_copilot_device_code,
+            commands::copilot::poll_copilot_device_code,
+            commands::copilot::switch_copilot_account,
+            commands::copilot::delete_copilot_account,
+            commands::copilot::delete_copilot_accounts,
+            commands::copilot::refresh_copilot_quota,
+            commands::copilot::refresh_all_copilot_quotas,
+            commands::copilot::refresh_current_copilot_quota,
+            commands::copilot::update_copilot_account_tags,
+
             // Codex Instance Commands
             commands::codex_instance::codex_get_instance_defaults,
             commands::codex_instance::codex_list_instances,

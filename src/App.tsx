@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { AccountsPage } from './pages/AccountsPage';
 import { CodexAccountsPage } from './pages/CodexAccountsPage';
+import { CopilotAccountsPage } from './pages/CopilotAccountsPage';
 
 import { FingerprintsPage } from './pages/FingerprintsPage';
 import { WakeupTasksPage } from './pages/WakeupTasksPage';
@@ -260,6 +261,11 @@ function App() {
       } catch (error) {
         console.error('Failed to refresh Codex quotas:', error);
       }
+      try {
+        await invoke('refresh_current_copilot_quota');
+      } catch (error) {
+        console.error('Failed to refresh Copilot quotas:', error);
+      }
     }).then((fn) => { unlisten = fn; });
 
     return () => {
@@ -489,6 +495,7 @@ function App() {
         {page === 'dashboard' && <DashboardPage onNavigate={setPage} />}
         {page === 'overview' && <AccountsPage onNavigate={setPage} />}
         {page === 'codex' && <CodexAccountsPage />}
+        {page === 'copilot' && <CopilotAccountsPage />}
         {page === 'instances' && <InstancesPage onNavigate={setPage} />}
         {page === 'fingerprints' && <FingerprintsPage onNavigate={setPage} />}
         {page === 'wakeup' && <WakeupTasksPage onNavigate={setPage} />}

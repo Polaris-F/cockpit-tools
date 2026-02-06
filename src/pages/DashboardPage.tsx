@@ -2,15 +2,18 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useCodexAccountStore } from '../stores/useCodexAccountStore';
+import { useCopilotAccountStore } from '../stores/useCopilotAccountStore';
 import { Page } from '../types/navigation';
 import { Users, CheckCircle2, Sparkles, RotateCw, Play } from 'lucide-react';
 import { getSubscriptionTier, getDisplayModels, getModelShortName, formatResetTimeDisplay } from '../utils/account';
 import { getCodexPlanDisplayName, getCodexQuotaClass, formatCodexResetTime } from '../types/codex';
 import { Account } from '../types/account';
 import { CodexAccount } from '../types/codex';
+import { CopilotAccount } from '../types/copilot';
 import './DashboardPage.css';
 import { RobotIcon } from '../components/icons/RobotIcon';
 import { CodexIcon } from '../components/icons/CodexIcon';
+import { CopilotIcon } from '../components/icons/CopilotIcon';
 
 interface DashboardPageProps {
   onNavigate: (page: Page) => void;
@@ -38,8 +41,18 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     fetchCurrentAccount: fetchCodexCurrent
   } = useCodexAccountStore();
 
+  // Copilot Data
+  const {
+    accounts: copilotAccounts,
+    currentAccount: copilotCurrent,
+    switchAccount: switchCopilotAccount,
+    fetchAccounts: fetchCopilotAccounts,
+    fetchCurrentAccount: fetchCopilotCurrent
+  } = useCopilotAccountStore();
+
   const agCurrentId = agCurrent?.id;
   const codexCurrentId = codexCurrent?.id;
+  const copilotCurrentId = copilotCurrent?.id;
 
   const agCurrentAccount = useMemo(() => {
     if (!agCurrentId) return null;
@@ -51,25 +64,37 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     return codexAccounts.find((account) => account.id === codexCurrentId) ?? codexCurrent ?? null;
   }, [codexAccounts, codexCurrent, codexCurrentId]);
 
+  const copilotCurrentAccount = useMemo(() => {
+    if (!copilotCurrentId) return null;
+    return copilotAccounts.find((account) => account.id === copilotCurrentId) ?? copilotCurrent ?? null;
+  }, [copilotAccounts, copilotCurrent, copilotCurrentId]);
+
   React.useEffect(() => {
     fetchAgAccounts();
     fetchAgCurrent();
     fetchCodexAccounts();
     fetchCodexCurrent();
+    fetchCopilotAccounts();
+    fetchCopilotCurrent();
   }, []);
 
   // Statistics
   const stats = useMemo(() => {
     return {
-      total: agAccounts.length + codexAccounts.length,
+      total: agAccounts.length + codexAccounts.length + copilotAccounts.length,
       antigravity: agAccounts.length,
-      codex: codexAccounts.length
+      codex: codexAccounts.length,
+      copilot: copilotAccounts.length
     };
-  }, [agAccounts, codexAccounts]);
+  }, [agAccounts, codexAccounts, copilotAccounts]);
 
   // Refresh States
   const [refreshing, setRefreshing] = React.useState<Set<string>>(new Set());
-  const [cardRefreshing, setCardRefreshing] = React.useState<{ag: boolean, codex: boolean}>({ ag: false, codex: false });
+  const [cardRefreshing, setCardRefreshing] = React.useState<{ag: boolean, codex: boolean, copilot: boolean}>({
+    ag: false,
+    codex: false,
+    copilot: false
+  });
 
   // Refresh Handlers
   const handleRefreshAg = async (accountId: string) => {
@@ -134,6 +159,37 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     }
   };
 
+  const handleRefreshCopilot = async (accountId: string) => {
+    if (refreshing.has(accountId)) return;
+    setRefreshing(prev => new Set(prev).add(accountId));
+    try {
+      await useCopilotAccountStore.getState().refreshQuota(accountId);
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setRefreshing(prev => {
+        const next = new Set(prev);
+        next.delete(accountId);
+        return next;
+      });
+    }
+  };
+
+  const handleRefreshCopilotCard = async () => {
+    if (cardRefreshing.copilot) return;
+    setCardRefreshing(prev => ({ ...prev, copilot: true }));
+    const idsToRefresh = [copilotCurrentId, copilotRecommended?.id].filter(Boolean) as string[];
+    try {
+      for (const id of idsToRefresh) {
+        await useCopilotAccountStore.getState().refreshQuota(id);
+      }
+    } catch (error) {
+      console.error('Card refresh failed:', error);
+    } finally {
+      setCardRefreshing(prev => ({ ...prev, copilot: false }));
+    }
+  };
+
   // Antigravity Recommendation Logic
   const agRecommended = useMemo(() => {
     if (agAccounts.length <= 1) return null;
@@ -180,6 +236,25 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
       return getScore(curr) > getScore(prev) ? curr : prev;
     });
   }, [codexAccounts, codexCurrentId]);
+
+  const copilotRecommended = useMemo(() => {
+    if (copilotAccounts.length <= 1) return null;
+
+    const others = copilotAccounts.filter((a) => {
+      if (a.id === copilotCurrentId) return false;
+      if (!a.quota) return false;
+      return true;
+    });
+    if (others.length === 0) return null;
+
+    return others.reduce((prev, curr) => {
+      const getScore = (acc: CopilotAccount) => {
+        if (!acc.quota) return -1;
+        return acc.quota.remaining_requests ?? -1;
+      };
+      return getScore(curr) > getScore(prev) ? curr : prev;
+    });
+  }, [copilotAccounts, copilotCurrentId]);
 
   // Render Helpers
   const renderAgAccountContent = (account: Account | null) => {
@@ -320,6 +395,56 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
     );
   };
 
+  const renderCopilotAccountContent = (account: CopilotAccount | null) => {
+    if (!account) return <div className="empty-slot">{t('dashboard.noAccount', '无账号')}</div>;
+
+    const included = account.quota?.included_requests ?? 0;
+    const used = account.quota?.used_requests ?? 0;
+    const usedPct = included ? Math.min(100, Math.round((used / included) * 100)) : 0;
+    const planLabel = account.quota?.copilot_plan || account.plan || '-';
+
+    return (
+      <div className="account-mini-card">
+        <div className="account-mini-header">
+          <div className="account-info-row">
+            <span className="account-email" title={account.username}>{account.username}</span>
+            <span className="tier-tag">{planLabel}</span>
+          </div>
+        </div>
+
+        <div className="account-mini-quotas">
+          <div className="mini-quota-row-stacked">
+            <div className="mini-quota-header">
+              <span className="model-name">Premium</span>
+              <span className="model-pct">{used} / {included} ({usedPct}%)</span>
+            </div>
+            <div className="mini-progress-track">
+              <div className="mini-progress-bar" style={{ width: `${usedPct}%` }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="account-mini-actions icon-only-row">
+          <button
+            className="mini-icon-btn"
+            onClick={() => handleRefreshCopilot(account.id)}
+            title={t('common.refresh', '刷新')}
+            disabled={refreshing.has(account.id)}
+          >
+            <RotateCw size={14} className={refreshing.has(account.id) ? 'loading-spinner' : ''} />
+          </button>
+          <button
+            className="mini-icon-btn"
+            onClick={() => switchCopilotAccount(account.id)}
+            title={t('dashboard.switch', '切换')}
+          >
+            <Play size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // Helper for Quota Class (duplicated from Account utils roughly)
   function getQuotaClass(percentage: number): string {
     if (percentage > 80) return 'high';
@@ -359,6 +484,15 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
           <div className="stat-info">
              <span className="stat-label">{t('dashboard.panels.codex', 'Codex')}</span>
              <span className="stat-value">{stats.codex}</span>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon-bg warning">
+            <CopilotIcon size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">{t('dashboard.panels.copilot', 'Copilot')}</span>
+            <span className="stat-value">{stats.copilot}</span>
           </div>
         </div>
       </div>
@@ -450,6 +584,47 @@ export function DashboardPage({ onNavigate }: DashboardPageProps) {
            <button className="card-footer-action" onClick={() => onNavigate('codex')}>
               {t('dashboard.viewAllAccounts', '查看所有账号')}
            </button>
+        </div>
+
+        {/* Copilot Card */}
+        <div className="main-card copilot-card">
+          <div className="main-card-header">
+            <div className="header-title">
+              <CopilotIcon size={18} />
+              <h3>{t('dashboard.panels.copilot', 'Copilot')}</h3>
+            </div>
+            <button
+              className="header-action-btn"
+              onClick={handleRefreshCopilotCard}
+              disabled={cardRefreshing.copilot}
+              title={t('common.refresh', '刷新')}
+            >
+              <RotateCw size={14} className={cardRefreshing.copilot ? 'loading-spinner' : ''} />
+              <span>{t('common.refresh', '刷新')}</span>
+            </button>
+          </div>
+
+          <div className="split-content">
+            <div className="split-half current-half">
+              <span className="half-label"><CheckCircle2 size={12}/> {t('dashboard.current', '当前账户')}</span>
+              {renderCopilotAccountContent(copilotCurrentAccount)}
+            </div>
+
+            <div className="split-divider"></div>
+
+            <div className="split-half recommend-half">
+              <span className="half-label"><Sparkles size={12}/> {t('dashboard.recommended', '推荐账号')}</span>
+              {copilotRecommended ? (
+                renderCopilotAccountContent(copilotRecommended)
+              ) : (
+                <div className="empty-slot-text">{t('dashboard.noRecommendation', '暂无更好推荐')}</div>
+              )}
+            </div>
+          </div>
+
+          <button className="card-footer-action" onClick={() => onNavigate('copilot')}>
+            {t('dashboard.viewAllAccounts', '查看所有账号')}
+          </button>
         </div>
 
       </div>
